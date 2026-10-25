@@ -69,7 +69,7 @@ export default function AiOverview({ query, result, live }: { query: string; res
   useLayoutEffect(() => {
     const el = body.current;
     if (el && !open) setClipped(el.scrollHeight > el.clientHeight + 2);
-  }, [shownText, open]);
+  }, [shownText, open, failed]);
 
   return (
     <section className="overview glass" aria-labelledby="overview-title">
@@ -77,7 +77,8 @@ export default function AiOverview({ query, result, live }: { query: string; res
         <h2 id="overview-title"><SparkIcon />AI Overview</h2>
         <span className="live-pill"><i className={`live-dot${live && !failed ? "" : " off"}`} aria-hidden="true" />{status}</span>
       </div>
-      <div ref={body} id="overview-text" className={`ai-body${clipped ? " clipped" : ""}${open ? " open" : ""}`} aria-live="polite" aria-busy={streaming}>
+      {/* Space is held only while a live answer is on its way; without one the box fits the summary. */}
+      <div ref={body} id="overview-text" className={`ai-body${live && !failed ? " fixed" : ""}${clipped ? " clipped" : ""}${open ? " open" : ""}`} aria-live="polite" aria-busy={streaming}>
         <p key={showAi ? "ai" : "instant"} className={`ai-text${showAi && streaming ? " streaming" : ""}`}>{shownText}</p>
       </div>
       {/* Always laid out (hidden when not needed), so it can't push the results down when it appears. */}

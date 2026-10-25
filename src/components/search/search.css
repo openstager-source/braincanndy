@@ -195,7 +195,8 @@ body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-a
 @keyframes live { from { transform: scale(1); opacity: 0.6; } to { transform: scale(2.6); opacity: 0; } }
 /* Fixed height while the answer streams in, so the results below never jump (no layout shift).
    "Show more" opens the rest; a shift the visitor asked for doesn't count against CLS. */
-.ai-body { position: relative; height: calc(16px * 1.65 * 5); overflow: hidden; }
+.ai-body { position: relative; overflow: hidden; }
+.ai-body.fixed { height: calc(16px * 1.65 * 5); }
 .ai-body.open { height: auto; }
 .ai-body.clipped:not(.open) { -webkit-mask-image: linear-gradient(#000 62%, transparent); mask-image: linear-gradient(#000 62%, transparent); }
 .more-text { justify-self: start; border: 0; background: none; padding: 0; color: var(--teal); font: 600 13.5px/1.2 var(--font-body); cursor: pointer; }
