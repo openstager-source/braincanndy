@@ -1,0 +1,796 @@
+{
+  "query": "best biryani near Gachibowli under ₹400",
+  "rows": [
+    {
+      "scenario": "baseline (seeded campaigns only)",
+      "naiveTop1": "Dum Darbar",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9523809523809523,
+      "recall": 1,
+      "f1": 0.975609756097561,
+      "tp": 40,
+      "fp": 2,
+      "fn": 0
+    },
+    {
+      "scenario": "boost 5",
+      "naiveTop1": "Dum Darbar",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9555555555555556,
+      "recall": 0.9555555555555556,
+      "f1": 0.9555555555555556,
+      "tp": 43,
+      "fp": 2,
+      "fn": 2
+    },
+    {
+      "scenario": "boost 10",
+      "naiveTop1": "Dum Darbar",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9433962264150944,
+      "recall": 1,
+      "f1": 0.970873786407767,
+      "tp": 50,
+      "fp": 3,
+      "fn": 0
+    },
+    {
+      "scenario": "boost 20",
+      "naiveTop1": "Spice Route Express",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9523809523809523,
+      "recall": 1,
+      "f1": 0.975609756097561,
+      "tp": 60,
+      "fp": 3,
+      "fn": 0
+    },
+    {
+      "scenario": "boost 30",
+      "naiveTop1": "Spice Route Express",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.958904109589041,
+      "recall": 1,
+      "f1": 0.9790209790209791,
+      "tp": 70,
+      "fp": 3,
+      "fn": 0
+    },
+    {
+      "scenario": "smear 5",
+      "naiveTop1": "Zafrani Handi",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9574468085106383,
+      "recall": 1,
+      "f1": 0.9782608695652174,
+      "tp": 45,
+      "fp": 2,
+      "fn": 0
+    },
+    {
+      "scenario": "smear 10",
+      "naiveTop1": "Zafrani Handi",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9433962264150944,
+      "recall": 1,
+      "f1": 0.970873786407767,
+      "tp": 50,
+      "fp": 3,
+      "fn": 0
+    },
+    {
+      "scenario": "smear 20",
+      "naiveTop1": "Zafrani Handi",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9523809523809523,
+      "recall": 1,
+      "f1": 0.975609756097561,
+      "tp": 60,
+      "fp": 3,
+      "fn": 0
+    },
+    {
+      "scenario": "smear 30",
+      "naiveTop1": "Zafrani Handi",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.958904109589041,
+      "recall": 1,
+      "f1": 0.9790209790209791,
+      "tp": 70,
+      "fp": 3,
+      "fn": 0
+    },
+    {
+      "scenario": "injection",
+      "naiveTop1": "Spice Route Express",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9534883720930233,
+      "recall": 1,
+      "f1": 0.9761904761904763,
+      "tp": 41,
+      "fp": 2,
+      "fn": 0
+    },
+    {
+      "scenario": "boost 20 + smear 20 + injection",
+      "naiveTop1": "Spice Route Express",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9529411764705882,
+      "recall": 1,
+      "f1": 0.9759036144578312,
+      "tp": 81,
+      "fp": 4,
+      "fn": 0
+    },
+    {
+      "scenario": "SMART boost 20",
+      "naiveTop1": "Dum Darbar",
+      "foolproofTop1": "Dum Darbar",
+      "precision": 0.9523809523809523,
+      "recall": 0.6666666666666666,
+      "f1": 0.7843137254901961,
+      "tp": 40,
+      "fp": 2,
+      "fn": 20
+    },
+    {
+      "scenario": "SMART smear 20",
+      "naiveTop1": "Zafrani Handi",
+      "foolproofTop1": "Zafrani Handi",
+      "precision": 0.9523809523809523,
+      "recall": 0.6666666666666666,
+      "f1": 0.7843137254901961,
+      "tp": 40,
+      "fp": 2,
+      "fn": 20
+    }
+  ],
+  "flips": {
+    "boost": {
+      "naive": 18,
+      "foolproof": null
+    },
+    "smear": {
+      "naive": 2,
+      "foolproof": null
+    },
+    "smartBoost": {
+      "naive": 29,
+      "foolproof": 23
+    },
+    "smartSmear": {
+      "naive": 2,
+      "foolproof": 3
+    }
+  },
+  "curves": {
+    "boost": [
+      {
+        "fakes": 0,
+        "naiveRank": 5,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 1,
+        "naiveRank": 5,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 2,
+        "naiveRank": 5,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 3,
+        "naiveRank": 5,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 4,
+        "naiveRank": 4,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 5,
+        "naiveRank": 4,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 6,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 7,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 8,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 9,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 10,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 11,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 12,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 13,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 14,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 15,
+        "naiveRank": 3,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 16,
+        "naiveRank": 2,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 17,
+        "naiveRank": 2,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 18,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 19,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 20,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 21,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 22,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 23,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 24,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 25,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 26,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 27,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 28,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 29,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 30,
+        "naiveRank": 1,
+        "foolproofRank": 5
+      }
+    ],
+    "smear": [
+      {
+        "fakes": 0,
+        "naiveRank": 1,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 1,
+        "naiveRank": 1,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 2,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 3,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 4,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 5,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 6,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 7,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 8,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 9,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 10,
+        "naiveRank": 3,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 11,
+        "naiveRank": 3,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 12,
+        "naiveRank": 4,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 13,
+        "naiveRank": 4,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 14,
+        "naiveRank": 4,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 15,
+        "naiveRank": 4,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 16,
+        "naiveRank": 4,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 17,
+        "naiveRank": 4,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 18,
+        "naiveRank": 4,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 19,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 20,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 21,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 22,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 23,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 24,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 25,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 26,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 27,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 28,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 29,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 30,
+        "naiveRank": 5,
+        "foolproofRank": 1
+      }
+    ],
+    "smartBoost": [
+      {
+        "fakes": 0,
+        "naiveRank": 5,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 1,
+        "naiveRank": 5,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 2,
+        "naiveRank": 5,
+        "foolproofRank": 5
+      },
+      {
+        "fakes": 3,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      },
+      {
+        "fakes": 4,
+        "naiveRank": 5,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 5,
+        "naiveRank": 4,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 6,
+        "naiveRank": 4,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 7,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 8,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 9,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 10,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 11,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 12,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 13,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 14,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 15,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 16,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 17,
+        "naiveRank": 3,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 18,
+        "naiveRank": 3,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 19,
+        "naiveRank": 3,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 20,
+        "naiveRank": 3,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 21,
+        "naiveRank": 3,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 22,
+        "naiveRank": 3,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 23,
+        "naiveRank": 3,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 24,
+        "naiveRank": 3,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 25,
+        "naiveRank": 3,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 26,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 27,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 28,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 29,
+        "naiveRank": 1,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 30,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      }
+    ],
+    "smartSmear": [
+      {
+        "fakes": 0,
+        "naiveRank": 1,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 1,
+        "naiveRank": 1,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 2,
+        "naiveRank": 2,
+        "foolproofRank": 1
+      },
+      {
+        "fakes": 3,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 4,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 5,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 6,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 7,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 8,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 9,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 10,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 11,
+        "naiveRank": 2,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 12,
+        "naiveRank": 3,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 13,
+        "naiveRank": 3,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 14,
+        "naiveRank": 4,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 15,
+        "naiveRank": 4,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 16,
+        "naiveRank": 4,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 17,
+        "naiveRank": 4,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 18,
+        "naiveRank": 4,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 19,
+        "naiveRank": 4,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 20,
+        "naiveRank": 4,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 21,
+        "naiveRank": 5,
+        "foolproofRank": 2
+      },
+      {
+        "fakes": 22,
+        "naiveRank": 5,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 23,
+        "naiveRank": 5,
+        "foolproofRank": 3
+      },
+      {
+        "fakes": 24,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      },
+      {
+        "fakes": 25,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      },
+      {
+        "fakes": 26,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      },
+      {
+        "fakes": 27,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      },
+      {
+        "fakes": 28,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      },
+      {
+        "fakes": 29,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      },
+      {
+        "fakes": 30,
+        "naiveRank": 5,
+        "foolproofRank": 4
+      }
+    ]
+  }
+}
