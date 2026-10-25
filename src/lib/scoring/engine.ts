@@ -77,13 +77,15 @@ function reviewsByPlace(sb: Sandbox) {
   return m;
 }
 
+const reviewsOf = (sb: Sandbox, id: string) => (sb.reviewsFor ? sb.reviewsFor(id) : reviewsByPlace(sb).get(id) ?? []);
+
 function baselineFor(sb: Sandbox, id: string): PlaceResult {
   let cache = baselineCache.get(sb);
   if (!cache) baselineCache.set(sb, (cache = new Map()));
   let place = cache.get(id);
   if (!place) {
     const restaurant = sb.restaurants.find((r) => r.id === id)!;
-    cache.set(id, (place = scoreRestaurant(restaurant, reviewsByPlace(sb).get(id) ?? [], sb.now)));
+    cache.set(id, (place = scoreRestaurant(restaurant, reviewsOf(sb, id), sb.now)));
   }
   return place;
 }
@@ -99,7 +101,7 @@ export function scorePlaces(sb: Sandbox, attack?: AttackConfig, ids: readonly st
       continue;
     }
     const restaurant = sb.restaurants.find((r) => r.id === id)!;
-    const all = [...(reviewsByPlace(sb).get(id) ?? []), ...extra.filter((r) => r.restaurantId === id)];
+    const all = [...reviewsOf(sb, id), ...extra.filter((r) => r.restaurantId === id)];
     out.set(id, scoreRestaurant(restaurant, all, sb.now));
   }
   return out;

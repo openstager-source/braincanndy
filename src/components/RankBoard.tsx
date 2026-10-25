@@ -1,7 +1,8 @@
 "use client";
 
-import { useLayoutEffect, useRef, type RefObject } from "react";
+import { useRef } from "react";
 import type { Ranked } from "@/lib/scoring/engine";
+import { useFlip } from "./useFlip";
 
 interface Props {
   tone: "naive" | "fool";
@@ -70,25 +71,4 @@ export default function RankBoard(p: Props) {
       </ol>
     </section>
   );
-}
-
-/** Animates rows sliding to their new positions when the order changes. */
-function useFlip(ref: RefObject<HTMLOListElement | null>, order: string) {
-  const prev = useRef(new Map<string, number>());
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const next = new Map<string, number>();
-    for (const child of Array.from(el.children) as HTMLElement[]) {
-      const key = child.dataset.key;
-      if (!key) continue;
-      next.set(key, child.offsetTop); // relative to the list, so page scroll doesn't matter
-      const old = prev.current.get(key);
-      if (!still && old !== undefined && Math.abs(old - child.offsetTop) > 1 && typeof child.animate === "function") {
-        child.animate([{ transform: `translateY(${old - child.offsetTop}px)` }, { transform: "translateY(0)" }], { duration: 450, easing: "cubic-bezier(.2,.8,.2,1)" });
-      }
-    }
-    prev.current = next;
-  }, [ref, order]);
 }

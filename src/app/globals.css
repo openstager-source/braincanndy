@@ -1,83 +1,57 @@
-/* Layout concept: a case-file game board. Two verdict boards face off at the top; the attacker's
-   control deck and the case board (missions) sit below; evidence and the live AI close the file.
-   Saffron = game (credits, XP). Mint = trust (Foolproof). Chili = fraud (fooled, suspicious). */
+/* braincanndy "dark site": ink-deep ground, teal glows, lime accents, white text.
+   One deliberate dark look for the whole site (no light variant), so every colour is set here.
+   Layout concept: a night-time search engine; results read like a case file with the evidence beside them. */
 :root {
-  --bg: #f1f5f3;
-  --surface: #ffffff;
-  --surface-2: #e7eeea;
-  --surface-3: #dbe5e0;
-  --ink: #10201a;
-  --muted: #55665e;
-  --line: #d2dcd7;
-  --mint: #08735a;
-  --mint-soft: #daf1e8;
-  --chili: #c0301d;
-  --chili-soft: #fde5df;
-  --saffron: #e19a0b;
-  --saffron-ink: #855400;
-  --saffron-soft: #ffefc7;
-  --on-strong: #ffffff;
-  --shadow: 0 1px 2px rgb(16 32 26 / 0.05), 0 8px 24px rgb(16 32 26 / 0.06);
-  --radius: 16px;
-  --font-display: var(--font-bricolage, "Bricolage Grotesque"), ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-instrument, "Instrument Sans"), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: var(--font-jetbrains, "JetBrains Mono"), ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --bg: #041A1D;          /* ink-deep */
+  --surface: #062A2E;     /* ink */
+  --surface-2: #0A3337;
+  --surface-3: #10424A;
+  --ink: #FFFFFF;         /* text on dark grounds is white */
+  --muted: #A8C4C6;
+  --line: #1D4146;
+  --teal: #00BCC8;
+  --teal-dark: #00A3AE;
+  --lime: #D0FF00;
+  --lime-soft: #E9FF8A;
+  --coral: #FF7A64;       /* semantic: suspicious signals, not a brand accent */
+  --on-fill: #062A2E;     /* text on teal and lime fills is always ink */
+  --glass: rgb(255 255 255 / 0.055);
+  --glass-line: rgb(255 255 255 / 0.12);
+  --shadow: 0 18px 50px rgb(0 0 0 / 0.35);
+  --radius: 22px;
+  --radius-md: 12px;
+  --radius-xl: 28px;
+  --font-display: var(--font-unbounded, "Unbounded"), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-dmsans, "DM Sans"), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-body);
 
-  /* Older names used by some components. */
+  /* Names used by the game pages. */
+  --mint: var(--teal);
+  --mint-soft: #07383C;
+  --chili: var(--coral);
+  --chili-soft: #3B1C17;
+  --saffron: var(--lime);
+  --saffron-ink: var(--lime);
+  --saffron-soft: #243005;
+  --on-strong: var(--on-fill);
   --text: var(--ink);
   --border: var(--line);
-  --accent: var(--mint);
+  --accent: var(--teal);
   --accent-soft: var(--mint-soft);
-  --danger: var(--chili);
+  --danger: var(--coral);
   --danger-soft: var(--chili-soft);
-  --warn: var(--saffron-ink);
+  --warn: var(--lime);
   --warn-soft: var(--saffron-soft);
-  --naive: var(--chili);
-  --fool: var(--mint);
-  --on-accent: var(--on-strong);
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0c1311;
-    --surface: #131c19;
-    --surface-2: #1a2521;
-    --surface-3: #22302b;
-    --ink: #e5eee9;
-    --muted: #97a89f;
-    --line: #27352f;
-    --mint: #3fd2a4;
-    --mint-soft: #0f392d;
-    --chili: #ff7b65;
-    --chili-soft: #46160e;
-    --saffron: #f5b83f;
-    --saffron-ink: #f5b83f;
-    --saffron-soft: #3a2906;
-    --on-strong: #07140f;
-    --shadow: none;
-    color-scheme: dark;
-  }
-}
-
-:root[data-theme="dark"] {
-  --bg: #0c1311;
-  --surface: #131c19;
-  --surface-2: #1a2521;
-  --surface-3: #22302b;
-  --ink: #e5eee9;
-  --muted: #97a89f;
-  --line: #27352f;
-  --mint: #3fd2a4;
-  --mint-soft: #0f392d;
-  --chili: #ff7b65;
-  --chili-soft: #46160e;
-  --saffron: #f5b83f;
-  --saffron-ink: #f5b83f;
-  --saffron-soft: #3a2906;
-  --on-strong: #07140f;
-  --shadow: none;
+  --naive: var(--coral);
+  --fool: var(--teal);
+  --on-accent: var(--on-fill);
   color-scheme: dark;
+}
+
+/* The brand asks for a motion-off switch on every page; it sets data-motion="off". */
+:root[data-motion="off"] *, :root[data-motion="off"] *::before, :root[data-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
 }
 
 * { box-sizing: border-box; }
@@ -87,7 +61,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 15px/1.55 var(--font-body);
+  font: 16px/1.6 var(--font-body);
 }
 .wrap {
   max-width: 1160px;
@@ -97,8 +71,8 @@ body {
   padding-right: max(16px, env(safe-area-inset-right, 0px));
 }
 h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.015em; }
-h1 { font-size: clamp(38px, 6vw, 60px); line-height: 1; font-weight: 800; letter-spacing: -0.035em; }
-h2 { font-size: 19px; line-height: 1.2; font-weight: 700; }
+h1 { font-size: clamp(34px, 5.5vw, 52px); line-height: 1.05; font-weight: 700; letter-spacing: -0.02em; }
+h2 { font-size: 18px; line-height: 1.25; font-weight: 700; }
 h3 { font-size: 15px; line-height: 1.3; font-weight: 700; }
 p { margin: 0; }
 .muted { color: var(--muted); }
@@ -149,8 +123,8 @@ button {
   transition: transform 120ms ease, background 120ms ease;
 }
 button:active { transform: translateY(1px); }
-button.primary { background: var(--ink); border-color: var(--ink); color: var(--bg); }
-button.go { background: var(--saffron); border-color: var(--saffron); color: #10201a; }
+button.primary { background: var(--ink); border-color: var(--ink); color: var(--on-fill); }
+button.go { background: var(--lime); border-color: var(--lime); color: var(--on-fill); }
 button.ghost { background: transparent; border-color: transparent; color: var(--muted); padding: 6px 8px; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 @media (max-width: 820px) { .grid2 { grid-template-columns: 1fr; } }
@@ -281,6 +255,22 @@ input[type="range"] { width: 100%; accent-color: var(--saffron); }
 .legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }
 .legend i { display: inline-block; width: 14px; height: 3px; vertical-align: middle; margin-right: 6px; border-radius: 2px; }
 footer { margin-top: 36px; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 8px 16px; justify-content: space-between; }
+
+/* ---------- Shared controls (search and lab pages) ---------- */
+.navlink {
+  display: inline-flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px; font-weight: 600; font-size: 14px;
+  color: var(--ink); text-decoration: none; background: var(--glass); border: 1px solid var(--glass-line);
+  transition: transform 160ms ease, background 160ms ease;
+}
+.navlink:hover { transform: translateY(-2px); background: rgb(255 255 255 / 0.1); }
+.navlink svg { width: 16px; height: 16px; }
+.motion-toggle {
+  display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; font: 600 12.5px/1 var(--font-body);
+  background: var(--glass); border: 1px solid var(--glass-line); color: var(--ink); cursor: pointer;
+}
+.motion-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--lime); }
+.motion-toggle[aria-pressed="false"] .motion-dot { background: var(--muted); }
+:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
 
 /* Below-the-fold sections skip layout and paint until they're near the viewport. */
 .offscreen { content-visibility: auto; contain-intrinsic-size: auto 560px; }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { motionAllowed } from "@/lib/motion";
 import { Medal } from "./icons";
 
 export interface Toast {
@@ -49,7 +50,7 @@ function Confetti({ trigger }: { trigger: number }) {
 
   useEffect(() => {
     const canvas = ref.current;
-    if (!trigger || !canvas || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!trigger || !canvas || !motionAllowed()) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const w = window.innerWidth;

@@ -60,17 +60,30 @@ interface Ctx {
   priceForOne: number;
 }
 
-const PLURAL_DISHES = new Set(["andhra meals", "momos", "sweets", "noodles", "kebabs"]);
+// Cafés talk about drinks and bakes. Swapping word lists keeps the random sequence the same, so the
+// other places' reviews (and the paper's numbers) don't change.
+const CAFE_WORDS: typeof WORDS = {
+  ...WORDS,
+  padj: ["smooth", "fresh", "rich", "aromatic", "delicious", "balanced", "well made", "lovely", "perfectly brewed", "excellent"],
+  nadj: ["stale", "bland", "burnt", "watery", "dry"],
+  flaw: ["watery", "sweet", "dry", "bland", "lukewarm", "small"],
+};
+
+const PLURAL_DISHES = new Set(["andhra meals", "momos", "sweets", "noodles", "kebabs", "waffles"]);
 
 function fill(r: Rng, tpl: string, ctx: Ctx): string {
-  const base = pick(r, ctx.dishes);
+  // "Cafe" is the kind of place, not something on the menu.
+  const cafe = ctx.dishes.includes("cafe");
+  const words = cafe ? CAFE_WORDS : WORDS;
+  const base = pick(r, cafe ? ctx.dishes.filter((d) => d !== "cafe") : ctx.dishes);
   const dish = VARIANTS[base] ? pick(r, VARIANTS[base]!) : base;
   const two = (k: keyof typeof WORDS) => {
-    const a = pick(r, WORDS[k]);
-    let b = pick(r, WORDS[k]);
-    if (b === a) b = pick(r, WORDS[k]);
+    const a = pick(r, words[k]);
+    let b = pick(r, words[k]);
+    if (b === a) b = pick(r, words[k]);
     return [a, b] as const;
   };
+  if (cafe) tpl = tpl.replace("especially with the raita", "especially in the morning");
   const [padj, padj2] = two("padj");
   const [flaw, flaw2] = two("flaw");
   const p = Math.round((ctx.priceForOne * (0.8 + r() * 0.5)) / 10) * 10;
@@ -83,11 +96,11 @@ function fill(r: Rng, tpl: string, ctx: Ctx): string {
     .replaceAll("{area}", ctx.area)
     .replaceAll("{padj2}", padj2)
     .replaceAll("{padj}", padj)
-    .replaceAll("{madj}", pick(r, WORDS.madj))
-    .replaceAll("{nadj}", pick(r, WORDS.nadj))
+    .replaceAll("{madj}", pick(r, words.madj))
+    .replaceAll("{nadj}", pick(r, words.nadj))
     .replaceAll("{flaw2}", flaw2)
     .replaceAll("{flaw}", flaw)
-    .replaceAll("{portion}", pick(r, WORDS.portion))
+    .replaceAll("{portion}", pick(r, words.portion))
     .replaceAll("{p}", String(p));
 }
 

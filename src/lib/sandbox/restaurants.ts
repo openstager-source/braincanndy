@@ -39,8 +39,11 @@ export interface RestaurantSpec {
   reviews: number;
   /** How long the place has been on the platform. */
   ageDays: number;
-  /** A fake-review campaign already present in the seed data. */
-  campaign?: { kind: "boost" | "smear"; count: number; daysAgo: number };
+  /**
+   * A fake-review campaign already present in the seed data. textStyle "genuine" models
+   * LLM-written fakes: they read like real reviews and only behaviour gives them away.
+   */
+  campaign?: { kind: "boost" | "smear"; count: number; daysAgo: number; textStyle?: "template" | "genuine" };
 }
 
 export const RESTAURANTS: RestaurantSpec[] = [
@@ -77,6 +80,17 @@ export const RESTAURANTS: RestaurantSpec[] = [
   { id: "r28", name: "Tolichowki Haleem House", area: "Tolichowki", dishes: ["haleem"], priceForOne: 260, quality: 3.7, reviews: 40, ageDays: 600 },
   { id: "r29", name: "Madhapur Momo Bar", area: "Madhapur", dishes: ["momos", "noodles"], priceForOne: 200, quality: 3.5, reviews: 35, ageDays: 350 },
   { id: "r30", name: "Jubilee Juice Co.", area: "Jubilee Hills", dishes: ["juice", "sandwich"], priceForOne: 160, quality: 3.3, reviews: 30, ageDays: 300 },
+  // Cafés. Demo query: "best cafe in Gachibowli".
+  { id: "r31", name: "Brew Theory", area: "Gachibowli", dishes: ["cafe", "coffee", "croissant"], priceForOne: 380, quality: 4.75, reviews: 75, ageDays: 700 },
+  { id: "r32", name: "Chai & Chapter", area: "Gachibowli", dishes: ["cafe", "chai", "bun maska"], priceForOne: 180, quality: 4.2, reviews: 65, ageDays: 800 },
+  { id: "r33", name: "The Filter Room", area: "Gachibowli", dishes: ["cafe", "filter coffee", "coffee", "dosa"], priceForOne: 150, quality: 4.45, reviews: 70, ageDays: 900 },
+  // A new café that bought a burst of human-sounding 5★ reviews from fresh accounts.
+  { id: "r34", name: "Cloud Nine Café", area: "Gachibowli", dishes: ["cafe", "coffee", "waffles"], priceForOne: 420, quality: 3.4, reviews: 15, ageDays: 120, campaign: { kind: "boost", count: 50, daysAgo: 6, textStyle: "genuine" } },
+  // A good café hit by a 1★ smear campaign.
+  { id: "r35", name: "Velvet Bean", area: "Gachibowli", dishes: ["cafe", "coffee", "cheesecake"], priceForOne: 320, quality: 4.55, reviews: 55, ageDays: 600, campaign: { kind: "smear", count: 16, daysAgo: 15, textStyle: "genuine" } },
+  { id: "r36", name: "Roast Republic", area: "Kondapur", dishes: ["cafe", "coffee", "sandwich"], priceForOne: 300, quality: 4.0, reviews: 50, ageDays: 500 },
+  { id: "r37", name: "Masala Mug", area: "Hitech City", dishes: ["cafe", "chai", "sandwich"], priceForOne: 160, quality: 3.8, reviews: 45, ageDays: 400 },
+  { id: "r38", name: "Bakehouse 32", area: "Nanakramguda", dishes: ["cafe", "croissant", "cake"], priceForOne: 260, quality: 4.1, reviews: 40, ageDays: 450 },
 ];
 
 export const ALL_DISHES = [...new Set(RESTAURANTS.flatMap((r) => r.dishes))];

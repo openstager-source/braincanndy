@@ -33,4 +33,6 @@ export interface Sandbox {
   now: number;
   restaurants: Restaurant[];
   reviews: Review[];
+  /** One place's reviews, generated on first use, so callers can skip places they never look at. */
+  reviewsFor?: (restaurantId: string) => Review[];
 }

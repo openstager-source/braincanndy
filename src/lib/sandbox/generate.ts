@@ -84,37 +84,42 @@ export function makeInjection(spec: RestaurantSpec, now: number): Review {
   };
 }
 
-export function generateSandbox(seed = SANDBOX_SEED): Sandbox {
+/** One place's reviews. Every place draws from its own seeded random stream, so a place can be
+ * generated on its own and still come out exactly as it does in the full sandbox. */
+export function placeReviews(spec: RestaurantSpec, seed = SANDBOX_SEED): Review[] {
   const now = SANDBOX_NOW;
   const reviews: Review[] = [];
-  for (const spec of RESTAURANTS) {
-    const r = mulberry32(seed ^ hashString(spec.id));
-    const openedAt = now - spec.ageDays * DAY;
-    for (let i = 0; i < spec.reviews; i++) {
-      const createdAt = openedAt + r() * (now - openedAt - DAY);
-      const rating = clampRating(normal(r, spec.quality, 0.9));
-      reviews.push({
-        id: `${spec.id}-g${i}`,
-        restaurantId: spec.id,
-        rating,
-        text: genuineText(r, spec, rating),
-        createdAt,
-        reviewer: genuineReviewer(r, `${spec.id}-gu${i}`, createdAt),
-        label: "genuine",
-      });
-    }
-    if (spec.campaign) {
-      reviews.push(
-        ...makeFakes(spec, {
-          kind: spec.campaign.kind,
-          count: spec.campaign.count,
-          smart: false,
-          endsAt: now - spec.campaign.daysAgo * DAY,
-          idPrefix: `${spec.id}-seed`,
-          attack: "seeded",
-        }),
-      );
-    }
+  const r = mulberry32(seed ^ hashString(spec.id));
+  const openedAt = now - spec.ageDays * DAY;
+  for (let i = 0; i < spec.reviews; i++) {
+    const createdAt = openedAt + r() * (now - openedAt - DAY);
+    const rating = clampRating(normal(r, spec.quality, 0.9));
+    reviews.push({
+      id: `${spec.id}-g${i}`,
+      restaurantId: spec.id,
+      rating,
+      text: genuineText(r, spec, rating),
+      createdAt,
+      reviewer: genuineReviewer(r, `${spec.id}-gu${i}`, createdAt),
+      label: "genuine",
+    });
   }
-  return { now, restaurants: RESTAURANTS.map(toRestaurant), reviews };
+  if (spec.campaign) {
+    reviews.push(
+      ...makeFakes(spec, {
+        kind: spec.campaign.kind,
+        count: spec.campaign.count,
+        smart: false,
+        endsAt: now - spec.campaign.daysAgo * DAY,
+        idPrefix: `${spec.id}-seed`,
+        attack: "seeded",
+        textStyle: spec.campaign.textStyle,
+      }),
+    );
+  }
+  return reviews;
+}
+
+export function generateSandbox(seed = SANDBOX_SEED): Sandbox {
+  return { now: SANDBOX_NOW, restaurants: RESTAURANTS.map(toRestaurant), reviews: RESTAURANTS.flatMap((spec) => placeReviews(spec, seed)) };
 }

@@ -1,6 +1,7 @@
 import { mulberry32, shuffle } from "../rng";
 import { DAY, makeFakes } from "../sandbox/generate";
 import { RESTAURANTS } from "../sandbox/restaurants";
+import { evidenceFor } from "../search/insights";
 import { FLAG_THRESHOLD, scorePlace, type ScoredReview } from "../scoring/signals";
 import type { Restaurant, Review, Sandbox } from "../types";
 
@@ -29,22 +30,6 @@ export const QUIZ_FAKES = CAMPAIGNS.reduce((n, c) => n + c.fakes, 0);
 
 const longestFirst = (a: ScoredReview, b: ScoredReview) => b.review.text.length - a.review.text.length || a.review.id.localeCompare(b.review.id);
 
-function ageText(days: number): string {
-  if (days >= 730) return `${Math.floor(days / 365)} years`;
-  if (days >= 365) return "1 year";
-  if (days >= 60) return `${Math.floor(days / 30)} months`;
-  return `${Math.max(1, Math.round(days))} days`;
-}
-
-function evidenceFor(s: ScoredReview): string[] {
-  if (s.suspicion >= FLAG_THRESHOLD) return s.signals.map((g) => g.reason[0]!.toUpperCase() + g.reason.slice(1));
-  const r = s.review;
-  const n = r.reviewer.reviewCount;
-  const facts = [`Account was ${ageText((r.createdAt - r.reviewer.createdAt) / DAY)} old when it posted`, `${n} review${n === 1 ? "" : "s"} on the platform`];
-  if (!s.signals.some((g) => g.kind === "burst")) facts.push("Posted on a normal day, not in a burst");
-  return facts;
-}
-
 export function buildQuiz(sb: Sandbox): QuizItem[] {
   const items: QuizItem[] = [];
   for (const c of CAMPAIGNS) {
@@ -54,7 +39,8 @@ export function buildQuiz(sb: Sandbox): QuizItem[] {
       kind: c.kind, count: c.count, smart: false, textStyle: "genuine",
       endsAt: sb.now - c.daysAgo * DAY, idPrefix: `quiz-${c.kind}`, attack: c.kind,
     });
-    const scored = scorePlace([...sb.reviews.filter((r) => r.restaurantId === c.restaurantId), ...fakes], sb.now);
+    const own = sb.reviewsFor?.(c.restaurantId) ?? sb.reviews.filter((r) => r.restaurantId === c.restaurantId);
+    const scored = scorePlace([...own, ...fakes], sb.now);
     const sameMood = (r: Review) => (c.kind === "boost" ? r.rating >= 4 : r.rating <= 2);
     const toItem = (s: ScoredReview): QuizItem => ({
       id: s.review.id,
