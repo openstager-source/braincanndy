@@ -1,22 +1,18 @@
-import { z } from "zod";
 import type { Review, Sandbox } from "../types";
 import { makeFakes, makeInjection } from "./generate";
 import { RESTAURANTS } from "./restaurants";
 
 export const MAX_FAKES = 30;
 
-const restaurantId = z.string().regex(/^r\d{2}$/).refine((id) => RESTAURANTS.some((r) => r.id === id));
-
 /** Everything the client may send about an attack. The server rebuilds the fake reviews itself. */
-export const AttackSchema = z.object({
-  boost: z.number().int().min(0).max(MAX_FAKES),
-  boostTarget: restaurantId,
-  smear: z.number().int().min(0).max(MAX_FAKES),
-  smearTarget: restaurantId,
-  injection: z.boolean(),
-  smart: z.boolean(),
-});
-export type AttackConfig = z.infer<typeof AttackSchema>;
+export interface AttackConfig {
+  boost: number;
+  boostTarget: string;
+  smear: number;
+  smearTarget: string;
+  injection: boolean;
+  smart: boolean;
+}
 
 export const NO_ATTACK: AttackConfig = {
   boost: 0,

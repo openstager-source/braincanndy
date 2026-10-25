@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AttackSchema } from "@/lib/sandbox/attacks";
+import { AttackSchema } from "@/lib/sandbox/attack-schema";
 import { generateSandbox } from "@/lib/sandbox/generate";
 import { runQuery } from "@/lib/scoring/engine";
 import { GeminiNotConfigured, streamGemini } from "@/lib/server/gemini";

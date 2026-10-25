@@ -15,11 +15,12 @@
   --fool: #0f766e;
   --radius: 12px;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 2px 8px rgb(0 0 0 / 0.04);
+  --on-accent: #ffffff;
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #111110;
     --surface: #1a1a19;
     --surface-2: #242422;
@@ -35,9 +36,30 @@
     --naive: #f97066;
     --fool: #2dd4bf;
     --shadow: none;
+    --on-accent: #042f2e;
     color-scheme: dark;
   }
 }
+
+:root[data-theme="dark"] {
+  --bg: #111110;
+  --surface: #1a1a19;
+  --surface-2: #242422;
+  --text: #ededeb;
+  --muted: #a3a19b;
+  --border: #2f2f2c;
+  --accent: #2dd4bf;
+  --accent-soft: #134e4a;
+  --danger: #f97066;
+  --danger-soft: #55160c;
+  --warn: #fdb022;
+  --warn-soft: #4e1d09;
+  --naive: #f97066;
+  --fool: #2dd4bf;
+  --shadow: none;
+  --on-accent: #042f2e;
+  color-scheme: dark;
+  }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -47,7 +69,11 @@ body {
   color: var(--text);
   font: 15px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
 }
-.wrap { max-width: 1120px; margin: 0 auto; padding: 24px 16px 64px; }
+.wrap {
+  max-width: 1120px; margin: 0 auto; padding-block: 24px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
 h1 { font-size: 28px; line-height: 1.2; margin: 0; letter-spacing: -0.02em; }
 h2 { font-size: 16px; margin: 0 0 12px; }
 h3 { font-size: 14px; margin: 0 0 8px; }
@@ -77,8 +103,7 @@ button {
   font: inherit; cursor: pointer; padding: 9px 14px; border-radius: 10px;
   border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
 }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-@media (prefers-color-scheme: dark) { button.primary { color: #042f2e; } }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { AttackSchema, NO_ATTACK } from "@/lib/sandbox/attacks";
+import { AttackSchema } from "@/lib/sandbox/attack-schema";
+import { NO_ATTACK } from "@/lib/sandbox/attacks";
 import { generateSandbox } from "@/lib/sandbox/generate";
 import { detectionMetrics, runQuery } from "@/lib/scoring/engine";
 import { DEFAULT_QUERY, parseQuery } from "@/lib/scoring/query";

@@ -13,7 +13,8 @@ import LivePanel from "./LivePanel";
 const sandbox = generateSandbox();
 const pct = (x: number) => `${Math.round(x * 100)}%`;
 
-export default function Demo() {
+/** `live` is false for the static preview, which has no server to call the AI. */
+export default function Demo({ live = true }: { live?: boolean }) {
   const [draft, setDraft] = useState(DEFAULT_QUERY);
   const [query, setQuery] = useState(DEFAULT_QUERY);
   const [attack, setAttack] = useState<AttackConfig>(NO_ATTACK);
@@ -130,7 +131,7 @@ export default function Demo() {
           </div>
 
           {inspected && <Inspector place={inspected} />}
-          <LivePanel query={query} attack={effective} />
+          {live && <LivePanel query={query} attack={effective} />}
         </>
       )}
     </div>
@@ -178,7 +179,7 @@ function Column(props: {
                 {p.restaurant.area} · ₹{p.restaurant.priceForOne} · {p.reviewCount} reviews
                 {props.showFlags && p.flagged > 0 && <> · <span style={{ color: "var(--warn)" }}>{p.flagged} suspicious</span></>}
               </span>
-              {p.obeyedInjection && <><br /><span className="tag danger">Followed an instruction hidden in a review</span></>}
+              {p.obeyedInjection && <><br /><span className="tag danger">Followed an instruction hidden in a review (simulated)</span></>}
             </span>
             <span className="stars" style={{ color: "var(--text)" }}>★ {props.score(p).toFixed(2)}</span>
           </li>
