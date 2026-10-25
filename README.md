@@ -24,40 +24,62 @@ All restaurants and reviews are fictional and generated. Flags are **suspicious 
 
 Baseline detection: 95% precision, 100% recall. Against the smart attacker, recall drops to ~67%. The sandbox fakes are template-written, so these numbers are optimistic; validate on YelpNYC.
 
-Note: in a live test, Gemini itself ignored 20 fakes + an injection in the naive prompt. The naive column on the page is a **simulated** stars-only pipeline. Measuring how often real LLMs flip is an open question for the paper.
+Live AI results vary run to run. With 20 fakes and the injection review, live naive Gemini (`gemini-3.5-flash-lite`) sometimes picks the boosted place and sometimes doesn't; Foolproof's ranking can't move because code computes it. The naive column's "followed an instruction" badge is **simulated**. Measuring how often real LLMs flip is an open question for the paper.
+
+## Architecture
+
+- The site is a **static export** (`out/`): plain HTML/JS served from Netlify's CDN. All ranking and attack simulation runs in the browser.
+- The only server code is the live AI: **`netlify/functions/answer.mts`** at `POST /api/answer`, which calls Gemini.
+
+## Deploy on Netlify
+
+1. Netlify → **Add new project → Import an existing project → GitHub** → pick this repo. Don't drag-and-drop the folder: it needs a build.
+2. Leave the build settings as detected; `netlify.toml` sets them (`npm run build`, publish `.next`, Node 22).
+3. **Site configuration → Environment variables**:
+   - `GEMINI_API_KEY` (required for the live AI).
+   - `GEMINI_MODEL`: leave unset. If it's set to `gemini-flash-latest`, delete it: that model took 40–70s per answer and Netlify stops functions at 60s.
+   - Optional bot check: `TURNSTILE_SECRET_KEY` and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (set both or neither).
+4. **Deploys → Trigger deploy → Clear cache and deploy site.** Env var changes only apply after a new deploy.
+
+### If something's wrong
+
+| What you see | Fix |
+|---|---|
+| "Page not found" on the whole site | The site was uploaded without a build. Re-create it with "Import an existing project" (step 1). |
+| Deploy log says the build failed | Copy the last 30 lines of the deploy log; the cause is usually there. |
+| "Live AI isn't set up on this site yet" | Add `GEMINI_API_KEY`, then redeploy. |
+| "Gemini rejected the API key" | The key is wrong or deleted. Create a new one in Google AI Studio. |
+| "Gemini is busy or slow right now" | All fallback models failed; try again. Check the function log: Netlify → Logs → Functions → `answer`. |
 
 ## Run locally
 
 ```bash
 npm install
 cp .env.example .env.local   # add GEMINI_API_KEY
-npm run dev                  # http://localhost:3000
-npm test                     # demo-script tests
+npm run dev                  # UI only, http://localhost:3000 (no live AI)
+npx netlify dev              # UI + live AI function, http://localhost:8888
+npm test                     # demo-script + endpoint tests
 npm run eval                 # writes results/sandbox-eval.json
 ```
 
-## Deploy (Vercel)
-
-1. Import this repo in Vercel (framework: Next.js).
-2. Set env vars: `GEMINI_API_KEY`, `GEMINI_MODEL` (optional, default `gemini-flash-latest`), `TURNSTILE_SECRET_KEY`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY`.
-3. Without `TURNSTILE_SECRET_KEY`, the live AI endpoint refuses all requests in production (fail closed). The rest of the site still works.
-
 ## Security
 
-- API key server-only; page is static and edge-cached.
-- `/api/answer`: same-origin check, 4KB body cap, zod validation, per-IP + daily rate limit, Turnstile. The client sends only attack parameters; fake reviews are rebuilt on the server.
+- Gemini key is server-only (Netlify env var, read by the function). The page is static.
+- `/api/answer`: Netlify platform rate limit (10/min per IP), same-origin check, 4KB body cap, zod validation, in-memory backup limit, optional Turnstile with a signed 10-minute pass cookie. The client sends only attack parameters; fake reviews are rebuilt on the server.
+- Gemini calls: fast-model fallback chain, 15s first-byte limit per model, 45s hard stop (Netlify's limit is 60s). Upstream errors are logged, never shown to visitors.
 - Reviews are hostile input: rendered as plain text, capped, delimiter-stripped, wrapped in `<untrusted_review>` tags.
-- CSP, HSTS, `frame-ancestors 'none'`, nosniff, strict referrer and permissions policies.
-- Rate limiting is in-memory per instance. Swap in Upstash/Vercel KV before real traffic.
+- Headers (in `netlify.toml`): CSP, HSTS, `frame-ancestors 'none'`, nosniff, strict referrer and permissions policies. Each page also gets a hash-based script CSP at build time (`scripts/csp-meta.mjs`), so no inline script runs unless it's one Next.js generated.
 
 ## Layout
 
 ```
-src/lib/sandbox/   deterministic data: restaurants, review text, attacks
-src/lib/scoring/   signals, trust rating, ranking, query parsing
-src/lib/server/    Gemini client, guards, prompts
-src/components/    Demo UI, flip chart, live panel
-scripts/eval.ts    reproducible evaluation for the paper
+src/lib/sandbox/        deterministic data: restaurants, review text, attacks
+src/lib/scoring/        signals, trust rating, ranking, query parsing
+src/lib/server/         live AI handler, Gemini client, guards, prompts
+src/components/         Demo UI, flip chart, live panel
+netlify/functions/      the live AI endpoint
+scripts/eval.ts         reproducible evaluation for the paper
+scripts/csp-meta.mjs    post-build strict CSP
 ```
 
 ## Roadmap
