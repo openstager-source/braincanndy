@@ -9,6 +9,8 @@ const config: NextConfig = {
   // For hosting under a sub-path, e.g. NEXT_BASE_PATH=/braincanndy on GitHub Pages.
   basePath: process.env.NEXT_BASE_PATH || undefined,
   images: { unoptimized: true },
+  // The stylesheet is ~4 KB gzipped: inlining it saves a render-blocking round trip on slow networks.
+  experimental: { inlineCss: true },
   reactStrictMode: true,
   poweredByHeader: false,
 };

@@ -32,6 +32,7 @@ export interface QueryResult {
   parsed: ParsedQuery;
   naive: Ranked[];
   foolproof: Ranked[];
+  /** Scored places that match the query. */
   places: Map<string, PlaceResult>;
 }
 
@@ -58,7 +59,7 @@ export function scoreRestaurant(restaurant: Restaurant, reviews: Review[], now: 
   };
 }
 
-/** Baseline scores are cached per sandbox; only places touched by an attack are rescored. */
+/** Baseline scores are computed per place on first use and cached; only places touched by an attack are rescored. */
 const baselineCache = new WeakMap<Sandbox, Map<string, PlaceResult>>();
 const byPlaceCache = new WeakMap<Sandbox, Map<string, Review[]>>();
 
@@ -76,25 +77,37 @@ function reviewsByPlace(sb: Sandbox) {
   return m;
 }
 
-export function scoreAll(sb: Sandbox, attack?: AttackConfig): Map<string, PlaceResult> {
-  const byPlace = reviewsByPlace(sb);
-  let base = baselineCache.get(sb);
-  if (!base) {
-    base = new Map(sb.restaurants.map((r) => [r.id, scoreRestaurant(r, byPlace.get(r.id) ?? [], sb.now)]));
-    baselineCache.set(sb, base);
-  }
-  if (!attack) return base;
-  const touched = attackedPlaces(attack);
-  if (touched.size === 0) return base;
-  const extra = attackReviews(sb, attack);
-  const out = new Map(base);
-  for (const id of touched) {
+function baselineFor(sb: Sandbox, id: string): PlaceResult {
+  let cache = baselineCache.get(sb);
+  if (!cache) baselineCache.set(sb, (cache = new Map()));
+  let place = cache.get(id);
+  if (!place) {
     const restaurant = sb.restaurants.find((r) => r.id === id)!;
-    const all = [...(byPlace.get(id) ?? []), ...extra.filter((r) => r.restaurantId === id)];
+    cache.set(id, (place = scoreRestaurant(restaurant, reviewsByPlace(sb).get(id) ?? [], sb.now)));
+  }
+  return place;
+}
+
+/** Scores the given places (default: all) with the attack's fake reviews added. */
+export function scorePlaces(sb: Sandbox, attack?: AttackConfig, ids: readonly string[] = sb.restaurants.map((r) => r.id)): Map<string, PlaceResult> {
+  const touched = attack ? attackedPlaces(attack) : new Set<string>();
+  const extra = attack && touched.size > 0 ? attackReviews(sb, attack) : [];
+  const out = new Map<string, PlaceResult>();
+  for (const id of ids) {
+    if (!touched.has(id)) {
+      out.set(id, baselineFor(sb, id));
+      continue;
+    }
+    const restaurant = sb.restaurants.find((r) => r.id === id)!;
+    const all = [...(reviewsByPlace(sb).get(id) ?? []), ...extra.filter((r) => r.restaurantId === id)];
     out.set(id, scoreRestaurant(restaurant, all, sb.now));
   }
   return out;
 }
+
+export const scoreAll = (sb: Sandbox, attack?: AttackConfig) => scorePlaces(sb, attack);
+
+const candidateIds = (sb: Sandbox, parsed: ParsedQuery) => sb.restaurants.filter((r) => matches(r, parsed)).map((r) => r.id);
 
 const withRanks = (xs: PlaceResult[]): Ranked[] => xs.map((x, i) => ({ ...x, rank: i + 1 }));
 
@@ -111,9 +124,10 @@ export function rank(places: Map<string, PlaceResult>, parsed: ParsedQuery) {
   return { naive, foolproof };
 }
 
+/** Ranks the places that match the query. Only those places are scored; use scoreAll for sandbox-wide metrics. */
 export function runQuery(sb: Sandbox, query: string, attack?: AttackConfig): QueryResult {
   const parsed = parseQuery(query);
-  const places = scoreAll(sb, attack);
+  const places = scorePlaces(sb, attack, candidateIds(sb, parsed));
   return { parsed, places, ...rank(places, parsed) };
 }
 
@@ -123,20 +137,24 @@ export interface FlipPoint {
   foolproofRank: number;
 }
 
-/** Rank of the attacked place as fake count goes 0..max, holding the rest of the attack fixed. */
-export function flipCurve(sb: Sandbox, query: string, attack: AttackConfig, axis: "boost" | "smear", max: number): FlipPoint[] {
+/** Rank of the attacked place as fake count goes 0..max, one point at a time (so callers can spread the work out). */
+export function* flipCurvePoints(sb: Sandbox, query: string, attack: AttackConfig, axis: "boost" | "smear", max: number): Generator<FlipPoint> {
   const parsed = parseQuery(query);
+  const ids = candidateIds(sb, parsed);
   const target = axis === "boost" ? attack.boostTarget : attack.smearTarget;
-  const out: FlipPoint[] = [];
   for (let k = 0; k <= max; k++) {
-    const { naive, foolproof } = rank(scoreAll(sb, { ...attack, [axis]: k }), parsed);
-    out.push({
+    const { naive, foolproof } = rank(scorePlaces(sb, { ...attack, [axis]: k }, ids), parsed);
+    yield {
       fakes: k,
       naiveRank: naive.findIndex((p) => p.restaurant.id === target) + 1,
       foolproofRank: foolproof.findIndex((p) => p.restaurant.id === target) + 1,
-    });
+    };
   }
-  return out;
+}
+
+/** Rank of the attacked place as fake count goes 0..max, holding the rest of the attack fixed. */
+export function flipCurve(sb: Sandbox, query: string, attack: AttackConfig, axis: "boost" | "smear", max: number): FlipPoint[] {
+  return [...flipCurvePoints(sb, query, attack, axis, max)];
 }
 
 export interface Metrics {

@@ -6,6 +6,12 @@ Ask *"best biryani near Gachibowli under ₹400"*, then inject fake 5★ reviews
 
 All restaurants and reviews are fictional and generated. Flags are **suspicious signals**, not accusations.
 
+## Play
+
+- **Attack lab.** You're the attacker with a 40-credit budget. Fake reviews cost 1 credit each, a hidden instruction costs 5, and smart (aged, slow-posting) accounts triple the price of every fake. Seven missions run from "Buy the top spot" to **Boss: fool Foolproof**, which is winnable: 3 smart-account 1★ reviews tip the close race at the top. That's the open research problem, and the game says so.
+- **Spot the fake.** Six reviews, three written to deceive in a human-sounding voice from cheap accounts. Players judge the words; Foolproof judges behaviour and gets all six. It's the paper's point, played live.
+- XP, levels (Rookie → Chief inspector), badges, animated rank changes, verdict stamps, confetti. Progress is saved in the visitor's browser only.
+
 ## How it works
 
 - **Behaviour over text.** Each review is scored on posting bursts, rating far from the place's typical rating, single-review / brand-new accounts, near-duplicate text, and instructions aimed at AI.
@@ -70,13 +76,20 @@ npm run eval                 # writes results/sandbox-eval.json
 - Reviews are hostile input: rendered as plain text, capped, delimiter-stripped, wrapped in `<untrusted_review>` tags.
 - Headers (in `netlify.toml`): CSP, HSTS, `frame-ancestors 'none'`, nosniff, strict referrer and permissions policies. Each page also gets a hash-based script CSP at build time (`scripts/csp-meta.mjs`), so no inline script runs unless it's one Next.js generated.
 
+## Performance
+
+Measured with Lighthouse on its mobile profile with real throttling (slow 4G, 4× slower CPU): **performance 89–92, accessibility 100, best practices 100, LCP 1.0–1.1 s, CLS 0.002**. Every tap, measured with real input events on the same 4× slower CPU, finishes in under 200 ms (INP).
+
+How: the page is a static export with the CSS inlined, and fonts are self-hosted with size-matched fallbacks. On load, only the restaurants that match the question get scored. Sandbox-wide stats and the chart are computed in idle-time slices of 8 ms or less, and celebrations run at low priority.
+
 ## Layout
 
 ```
 src/lib/sandbox/        deterministic data: restaurants, review text, attacks
 src/lib/scoring/        signals, trust rating, ranking, query parsing
 src/lib/server/         live AI handler, Gemini client, guards, prompts
-src/components/         Demo UI, flip chart, live panel
+src/lib/game/           missions, credits, levels, quiz, saved progress
+src/components/         Attack lab, verdict boards, case board, quiz, effects, live panel
 netlify/functions/      the live AI endpoint
 scripts/eval.ts         reproducible evaluation for the paper
 scripts/csp-meta.mjs    post-build strict CSP

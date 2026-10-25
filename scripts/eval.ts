@@ -3,7 +3,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { MAX_FAKES, NO_ATTACK, type AttackConfig } from "../src/lib/sandbox/attacks";
 import { generateSandbox } from "../src/lib/sandbox/generate";
-import { detectionMetrics, flipCurve, runQuery } from "../src/lib/scoring/engine";
+import { detectionMetrics, flipCurve, runQuery, scoreAll } from "../src/lib/scoring/engine";
 import { DEFAULT_QUERY } from "../src/lib/scoring/query";
 
 const sb = generateSandbox();
@@ -29,7 +29,7 @@ const scenarios: { name: string; attack: AttackConfig }[] = [
 
 const rows = scenarios.map(({ name, attack }) => {
   const res = runQuery(sb, DEFAULT_QUERY, attack);
-  const m = detectionMetrics(res.places.values());
+  const m = detectionMetrics(scoreAll(sb, attack).values());
   return {
     scenario: name,
     naiveTop1: res.naive[0]?.restaurant.name,

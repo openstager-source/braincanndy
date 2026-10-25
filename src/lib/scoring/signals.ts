@@ -75,6 +75,21 @@ export function scorePlace(reviews: Review[], now: number): ScoredReview[] {
     window[i] = hi - lo - 1;
   }
 
+  // Pairwise text similarity, each pair computed once.
+  const maxSim = new Float64Array(n);
+  const similarCount = new Int32Array(n);
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const s = cosine(vecs[i]!, vecs[j]!);
+      if (s > maxSim[i]!) maxSim[i] = s;
+      if (s > maxSim[j]!) maxSim[j] = s;
+      if (s >= DUP_SIM) {
+        similarCount[i]!++;
+        similarCount[j]!++;
+      }
+    }
+  }
+
   const pass1: Signal[][] = rs.map((r, i) => {
     const sig: Signal[] = [];
 
@@ -89,21 +104,17 @@ export function scorePlace(reviews: Review[], now: number): ScoredReview[] {
     const single = r.reviewer.reviewCount <= 1;
     const fresh = ageDays < 7;
     if (single || fresh) {
-      const parts = [single && "account's only review", fresh && `account created ${ageDays < 1 ? "<1 day" : `${Math.round(ageDays)} days`} before posting`].filter(Boolean);
+      const days = Math.round(ageDays);
+      const age = ageDays < 1 ? "<1 day" : `${days} day${days === 1 ? "" : "s"}`;
+      const parts = [single && "account's only review", fresh && `account created ${age} before posting`].filter(Boolean);
       sig.push({ kind: "account", strength: single && fresh ? 1 : 0.5, reason: parts.join(", ") });
     }
 
-    let maxSim = 0;
-    let similar = 0;
-    for (let j = 0; j < n; j++) {
-      if (j === i) continue;
-      const s = cosine(vecs[i]!, vecs[j]!);
-      if (s > maxSim) maxSim = s;
-      if (s >= DUP_SIM) similar++;
-    }
+    const best = maxSim[i]!;
+    const similar = similarCount[i]!;
     // Needs a cluster, not one coincidental match: short genuine reviews collide by chance.
-    const dup = similar >= 2 ? clamp01((maxSim - 0.55) / 0.3) * Math.min(1, similar / 3) : 0;
-    if (dup > 0) sig.push({ kind: "duplicate", strength: dup, reason: `text ${Math.round(maxSim * 100)}% similar to ${similar} other review${similar === 1 ? "" : "s"}` });
+    const dup = similar >= 2 ? clamp01((best - 0.55) / 0.3) * Math.min(1, similar / 3) : 0;
+    if (dup > 0) sig.push({ kind: "duplicate", strength: dup, reason: `text ${Math.round(best * 100)}% similar to ${similar} other review${similar === 1 ? "" : "s"}` });
 
     return sig;
   });

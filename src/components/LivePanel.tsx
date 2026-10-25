@@ -41,7 +41,7 @@ async function errorFor(res: Response): Promise<string> {
   return `Something went wrong (HTTP ${res.status}). Try again.`;
 }
 
-export default function LivePanel({ query, attack }: { query: string; attack: AttackConfig }) {
+export default function LivePanel({ query, attack, onDone }: { query: string; attack: AttackConfig; onDone?: () => void }) {
   const [answers, setAnswers] = useState<Record<Mode, Answer>>(EMPTY);
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState<string | null>(null);
@@ -121,11 +121,12 @@ export default function LivePanel({ query, attack }: { query: string; attack: At
     await Promise.all([read("naive", naive), foolproof.then((res) => read("foolproof", res))]);
 
     setBusy(false);
+    if (naive || (await foolproof)) onDone?.();
     if (SITE_KEY && window.turnstile && widgetId.current) {
       window.turnstile.reset(widgetId.current);
       setToken(null);
     }
-  }, [query, attack, token]);
+  }, [query, attack, token, onDone]);
 
   if (!open) {
     return (

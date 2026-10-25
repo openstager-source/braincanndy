@@ -1,231 +1,101 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
-import { MAX_FAKES, NO_ATTACK, type AttackConfig } from "@/lib/sandbox/attacks";
-import { generateSandbox } from "@/lib/sandbox/generate";
-import { detectionMetrics, flipCurve, runQuery, type PlaceResult, type Ranked } from "@/lib/scoring/engine";
-import { DEFAULT_QUERY } from "@/lib/scoring/query";
-import { FLAG_THRESHOLD } from "@/lib/scoring/signals";
-import FlipChart from "./FlipChart";
-import LivePanel from "./LivePanel";
+import { startTransition, useCallback, useRef, useState } from "react";
+import { ACHIEVEMENTS, MISSIONS, QUIZ_BADGES, QUIZ_XP_PER_CORRECT, levelFor, totalXp } from "@/lib/game/missions";
+import { useProgress } from "@/lib/game/progress";
+import Detective from "./Detective";
+import { Fx, useFx } from "./Fx";
+import Lab from "./Lab";
 
-// Deterministic, so server prerender and client hydration produce the same data.
-const sandbox = generateSandbox();
-const pct = (x: number) => `${Math.round(x * 100)}%`;
+type Tab = "lab" | "detective";
 
 /** `live` is false for the static preview, which has no server to call the AI. */
 export default function Demo({ live = true }: { live?: boolean }) {
-  const [draft, setDraft] = useState(DEFAULT_QUERY);
-  const [query, setQuery] = useState(DEFAULT_QUERY);
-  const [attack, setAttack] = useState<AttackConfig>(NO_ATTACK);
-  const [axis, setAxis] = useState<"boost" | "smear">("boost");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("lab");
+  const { progress, loaded, complete, recordQuiz, reset } = useProgress();
+  const { toasts, burst, celebrate } = useFx();
+  const awarded = useRef(new Set<string>());
 
-  const baseline = useMemo(() => runQuery(sandbox, query), [query]);
-  const candidates = useMemo(() => baseline.foolproof.map((p) => p.restaurant), [baseline]);
+  const xp = totalXp(progress.done, progress.quizBest);
+  const lvl = levelFor(xp);
+  const badgeTotal = ACHIEVEMENTS.length - (live ? 0 : MISSIONS.filter((m) => m.requiresLive).length);
 
-  // Keep attack targets inside the current result set.
-  const effective = useMemo<AttackConfig>(() => {
-    const ids = candidates.map((c) => c.id);
-    if (ids.length === 0) return attack;
-    return {
-      ...attack,
-      boostTarget: ids.includes(attack.boostTarget) ? attack.boostTarget : ids.at(-1)!,
-      smearTarget: ids.includes(attack.smearTarget) ? attack.smearTarget : ids[0]!,
-    };
-  }, [attack, candidates]);
+  const award = useCallback(
+    (ids: string[]) => {
+      const fresh = ids.filter((id) => !awarded.current.has(id) && !progress.done.includes(id));
+      if (fresh.length === 0) return;
+      fresh.forEach((id) => awarded.current.add(id));
+      // Low priority: the player's tap paints first, the celebration follows a frame later.
+      startTransition(() => {
+        complete(fresh);
+        for (const id of fresh) {
+          const a = ACHIEVEMENTS.find((x) => x.id === id);
+          if (a) celebrate(a.title, `+${a.xp} XP · ${a.lesson}`);
+        }
+      });
+    },
+    [complete, celebrate, progress.done],
+  );
 
-  const result = useMemo(() => runQuery(sandbox, query, effective), [query, effective]);
-  const metrics = useMemo(() => detectionMetrics(result.places.values()), [result]);
+  const finishQuiz = useCallback(
+    (score: number) => {
+      if (score > progress.quizBest) {
+        celebrate(`New best: ${score}/6`, `+${(score - progress.quizBest) * QUIZ_XP_PER_CORRECT} XP`);
+        recordQuiz(score);
+      }
+      award(QUIZ_BADGES.filter((b) => score >= b.minScore).map((b) => b.id));
+    },
+    [progress.quizBest, recordQuiz, celebrate, award],
+  );
 
-  // The curve doesn't depend on the slider position, only on everything else. Compute it off the input path.
-  const curveKey = useDeferredValue(JSON.stringify({ query, effective: { ...effective, [axis]: 0 }, axis }));
-  const curve = useMemo(() => {
-    const { query: q, effective: a, axis: ax } = JSON.parse(curveKey) as { query: string; effective: AttackConfig; axis: "boost" | "smear" };
-    return flipCurve(sandbox, q, a, ax, MAX_FAKES);
-  }, [curveKey]);
-
-  const set = <K extends keyof AttackConfig>(k: K, v: AttackConfig[K]) => setAttack((a) => ({ ...effective, ...a, [k]: v }));
-  const baselineTop = baseline.foolproof[0]?.restaurant.id;
-  const inspected = result.places.get(selected ?? effective.boostTarget);
+  const tabButton = (id: Tab, label: string) => (
+    <button role="tab" id={`tab-${id}`} aria-controls={`panel-${id}`} aria-selected={tab === id} tabIndex={tab === id ? 0 : -1} onClick={() => setTab(id)}>
+      {label}
+    </button>
+  );
 
   return (
     <div className="stack">
-      <form
-        className="query"
-        onSubmit={(e) => {
-          e.preventDefault();
-          setQuery(draft.trim() || DEFAULT_QUERY);
-          setSelected(null);
-        }}
-      >
-        <input type="text" value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={120} aria-label="Ask where to eat" />
-        <button className="primary" type="submit">Ask</button>
-      </form>
+      <div className="playerbar">
+        <div
+          className="tabs"
+          role="tablist"
+          aria-label="Game mode"
+          onKeyDown={(e) => {
+            if (e.key === "ArrowRight" || e.key === "ArrowLeft") setTab((t) => (t === "lab" ? "detective" : "lab"));
+          }}
+        >
+          {tabButton("lab", "Attack lab")}
+          {tabButton("detective", "Spot the fake")}
+        </div>
+        <div className="xp">
+          <span className="lvl">Lv {lvl.level} · {lvl.name}</span>
+          <span className="bar" role="progressbar" aria-label="Progress to the next level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(lvl.progress * 100)}>
+            <span style={{ width: `${lvl.progress * 100}%` }} />
+          </span>
+          <span className="chip saffron">{xp} XP</span>
+          <span className="chip">{progress.done.length}/{badgeTotal} badges</span>
+          {progress.done.length + progress.quizBest > 0 && (
+            <button
+              className="ghost small"
+              onClick={() => {
+                awarded.current.clear();
+                reset();
+              }}
+            >
+              Reset progress
+            </button>
+          )}
+        </div>
+      </div>
 
-      {result.foolproof.length === 0 ? (
-        <p className="card muted">No sandbox restaurants match. Try a dish like biryani, haleem, dosa or mandi, and an area like Gachibowli or Charminar.</p>
-      ) : (
-        <>
-          <div className="grid2">
-            <Column title="Naive AI" subtitle="Takes stars and review text at face value" color="var(--naive)" items={result.naive} score={(p) => p.naiveRating} baselineTop={baselineTop} selected={inspected?.restaurant.id} onSelect={setSelected} />
-            <Column title="Foolproof" subtitle="Each review counts by how trustworthy it looks" color="var(--fool)" items={result.foolproof} score={(p) => p.trustRating} baselineTop={baselineTop} selected={inspected?.restaurant.id} onSelect={setSelected} showFlags />
-          </div>
-
-          <section className="card stack">
-            <div className="colhead">
-              <h2 style={{ margin: 0 }}>Attack simulator</h2>
-              <button onClick={() => setAttack({ ...NO_ATTACK, boostTarget: effective.boostTarget, smearTarget: effective.smearTarget })}>Reset</button>
-            </div>
-            <div className="controls">
-              <div className="control">
-                <label htmlFor="boost"><span>Fake 5★ reviews</span><span>{effective.boost}</span></label>
-                <input id="boost" type="range" min={0} max={MAX_FAKES} value={effective.boost} onChange={(e) => { set("boost", Number(e.target.value)); setAxis("boost"); }} />
-                <select aria-label="Boost target" value={effective.boostTarget} onChange={(e) => set("boostTarget", e.target.value)}>
-                  {candidates.map((c) => <option key={c.id} value={c.id}>Boost: {c.name}</option>)}
-                </select>
-              </div>
-              <div className="control">
-                <label htmlFor="smear"><span>Fake 1★ reviews</span><span>{effective.smear}</span></label>
-                <input id="smear" type="range" min={0} max={MAX_FAKES} value={effective.smear} onChange={(e) => { set("smear", Number(e.target.value)); setAxis("smear"); }} />
-                <select aria-label="Smear target" value={effective.smearTarget} onChange={(e) => set("smearTarget", e.target.value)}>
-                  {candidates.map((c) => <option key={c.id} value={c.id}>Smear: {c.name}</option>)}
-                </select>
-              </div>
-              <div className="control stack" style={{ gap: 10 }}>
-                <label className="toggle">
-                  <input type="checkbox" checked={effective.injection} onChange={(e) => set("injection", e.target.checked)} />
-                  <span><b>Prompt injection</b><br /><span className="muted small">A review on the boosted place tells AI assistants to rank it first.</span></span>
-                </label>
-                <label className="toggle">
-                  <input type="checkbox" checked={effective.smart} onChange={(e) => set("smart", e.target.checked)} />
-                  <span><b>Smart attacker</b><br /><span className="muted small">Aged accounts, posts spread over 90 days, genuine-style text. Shows where Foolproof breaks.</span></span>
-                </label>
-              </div>
-            </div>
-          </section>
-
-          <div className="grid2">
-            <section className="card">
-              <div className="colhead">
-                <h2 style={{ margin: 0 }}>Does the pick survive?</h2>
-                <div style={{ display: "flex", gap: 6 }}>
-                  <button aria-pressed={axis === "boost"} className={axis === "boost" ? "primary" : ""} onClick={() => setAxis("boost")}>Boost</button>
-                  <button aria-pressed={axis === "smear"} className={axis === "smear" ? "primary" : ""} onClick={() => setAxis("smear")}>Smear</button>
-                </div>
-              </div>
-              <FlipChart points={curve} current={effective[axis]} maxRank={result.foolproof.length} title={`Rank of the ${axis === "boost" ? "boosted" : "smeared"} place as fake reviews are added`} />
-            </section>
-
-            <section className="card stack">
-              <h2 style={{ margin: 0 }}>Detection on this sandbox</h2>
-              <div className="metrics">
-                <div className="metric"><span className="small muted">Precision</span><b>{pct(metrics.precision)}</b></div>
-                <div className="metric"><span className="small muted">Recall</span><b>{pct(metrics.recall)}</b></div>
-                <div className="metric"><span className="small muted">F1</span><b>{pct(metrics.f1)}</b></div>
-              </div>
-              <p className="small muted">
-                {metrics.tp} fakes caught · {metrics.fn} missed · {metrics.fp} genuine reviews wrongly flagged, out of {metrics.tp + metrics.fp + metrics.fn + metrics.tn} reviews. We know which reviews are fake because we generated them.
-              </p>
-            </section>
-          </div>
-
-          {inspected && <Inspector place={inspected} />}
-          {live && <LivePanel query={query} attack={effective} />}
-        </>
-      )}
+      <div id="panel-lab" role="tabpanel" aria-labelledby="tab-lab" hidden={tab !== "lab"}>
+        <Lab live={live} done={progress.done} ready={loaded} onMissions={award} />
+      </div>
+      <div id="panel-detective" role="tabpanel" aria-labelledby="tab-detective" hidden={tab !== "detective"}>
+        <Detective best={progress.quizBest} onFinish={finishQuiz} />
+      </div>
+      <Fx toasts={toasts} burst={burst} />
     </div>
-  );
-}
-
-function Column(props: {
-  title: string;
-  subtitle: string;
-  color: string;
-  items: Ranked[];
-  score: (p: Ranked) => number;
-  baselineTop?: string;
-  selected?: string;
-  onSelect: (id: string) => void;
-  showFlags?: boolean;
-}) {
-  const top = props.items[0];
-  const changed = top && top.restaurant.id !== props.baselineTop;
-  return (
-    <section className="card" style={{ color: "inherit" }}>
-      <div className="colhead">
-        <div>
-          <h2 style={{ margin: 0 }}><span className="dot" style={{ background: props.color }} />{props.title}</h2>
-          <p className="small muted">{props.subtitle}</p>
-        </div>
-        {changed ? <span className="tag danger">Top pick changed</span> : <span className="tag ok">Top pick holds</span>}
-      </div>
-      <ol className="rank">
-        {props.items.slice(0, 6).map((p) => (
-          <li
-            key={p.restaurant.id}
-            className={`${p.rank === 1 ? "top" : ""} ${props.selected === p.restaurant.id ? "sel" : ""}`}
-            style={p.rank === 1 ? { color: props.color } : undefined}
-            onClick={() => props.onSelect(p.restaurant.id)}
-            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && props.onSelect(p.restaurant.id)}
-            tabIndex={0}
-            aria-label={`Inspect reviews for ${p.restaurant.name}`}
-          >
-            <span className="num">#{p.rank}</span>
-            <span style={{ color: "var(--text)" }}>
-              <span className="name">{p.restaurant.name}</span>
-              <br />
-              <span className="small muted">
-                {p.restaurant.area} · ₹{p.restaurant.priceForOne} · {p.reviewCount} reviews
-                {props.showFlags && p.flagged > 0 && <> · <span style={{ color: "var(--warn)" }}>{p.flagged} suspicious</span></>}
-              </span>
-              {p.obeyedInjection && <><br /><span className="tag danger">Followed an instruction hidden in a review (simulated)</span></>}
-            </span>
-            <span className="stars" style={{ color: "var(--text)" }}>★ {props.score(p).toFixed(2)}</span>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-function Inspector({ place }: { place: PlaceResult }) {
-  const [all, setAll] = useState(false);
-  const sorted = [...place.scored].sort((a, b) => b.suspicion - a.suspicion);
-  const shown = all ? sorted : sorted.slice(0, 10);
-  return (
-    <section className="card stack">
-      <div className="colhead">
-        <div>
-          <h2 style={{ margin: 0 }}>Reviews: {place.restaurant.name}</h2>
-          <p className="small muted">Raw ★ {place.naiveRating.toFixed(2)} → trust-adjusted ★ {place.trustRating.toFixed(2)} · {place.flagged} of {place.reviewCount} show suspicious signals. Click a place above to inspect it.</p>
-        </div>
-        <button onClick={() => setAll((x) => !x)}>{all ? "Show top 10" : `Show all ${sorted.length}`}</button>
-      </div>
-      <ul className="reviews">
-        {shown.map((s) => {
-          const flagged = s.suspicion >= FLAG_THRESHOLD;
-          return (
-            <li key={s.review.id}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                <span className="stars">{"★".repeat(s.review.rating)}<span className="muted">{"★".repeat(5 - s.review.rating)}</span></span>
-                <span style={{ display: "flex", gap: 6 }}>
-                  {flagged && <span className="tag warn">Suspicious {pct(s.suspicion)}</span>}
-                  {s.review.label === "fake" && <span className="tag" title="Ground truth from the sandbox generator">injected fake</span>}
-                </span>
-              </div>
-              <div className="bar"><span style={{ width: pct(s.suspicion), background: flagged ? "var(--warn)" : "var(--accent)" }} /></div>
-              {/* Rendered as text, never as HTML: reviews are hostile input. */}
-              <p className="text small">{s.review.text}</p>
-              {s.signals.length > 0 && (
-                <ul className="reasons">
-                  {s.signals.map((g, i) => <li key={i}>{g.reason}</li>)}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-    </section>
   );
 }

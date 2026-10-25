@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AttackSchema } from "@/lib/sandbox/attack-schema";
 import { NO_ATTACK } from "@/lib/sandbox/attacks";
 import { generateSandbox } from "@/lib/sandbox/generate";
-import { detectionMetrics, runQuery } from "@/lib/scoring/engine";
+import { detectionMetrics, runQuery, scoreAll } from "@/lib/scoring/engine";
 import { DEFAULT_QUERY, parseQuery } from "@/lib/scoring/query";
 import { detectInjection } from "@/lib/scoring/text";
 import { sanitizeReview } from "@/lib/server/prompts";
@@ -38,7 +38,7 @@ describe("demo script", () => {
   });
 
   it("keeps baseline precision and recall high", () => {
-    const m = detectionMetrics(runQuery(sb, DEFAULT_QUERY).places.values());
+    const m = detectionMetrics(scoreAll(sb).values());
     expect(m.precision).toBeGreaterThan(0.9);
     expect(m.recall).toBeGreaterThan(0.9);
   });

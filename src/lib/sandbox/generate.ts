@@ -32,9 +32,21 @@ export interface FakeOptions {
   endsAt: number;
   idPrefix: string;
   attack: Review["attack"];
+  /** Defaults to "genuine" for smart attackers, "template" otherwise. "genuine" alone models LLM-written text from cheap accounts. */
+  textStyle?: "template" | "genuine";
 }
 
+// Fakes are deterministic, so each campaign is generated once. Callers must not mutate the result.
+const fakeCache = new Map<string, Review[]>();
+
 export function makeFakes(spec: RestaurantSpec, o: FakeOptions): Review[] {
+  const key = [spec.id, o.idPrefix, o.kind, o.smart, o.textStyle ?? "", o.count, o.endsAt, o.attack ?? ""].join("|");
+  let fakes = fakeCache.get(key);
+  if (!fakes) fakeCache.set(key, (fakes = generateFakes(spec, o)));
+  return fakes;
+}
+
+function generateFakes(spec: RestaurantSpec, o: FakeOptions): Review[] {
   const r = mulberry32(hashString(`${spec.id}:${o.idPrefix}:${o.kind}:${o.smart}`));
   const out: Review[] = [];
   for (let i = 0; i < o.count; i++) {
@@ -48,7 +60,7 @@ export function makeFakes(spec: RestaurantSpec, o: FakeOptions): Review[] {
       id: `${o.idPrefix}-${i}`,
       restaurantId: spec.id,
       rating,
-      text: o.smart ? genuineText(r, spec, rating) : fakeText(r, spec, o.kind),
+      text: (o.textStyle ?? (o.smart ? "genuine" : "template")) === "genuine" ? genuineText(r, spec, rating) : fakeText(r, spec, o.kind),
       createdAt,
       reviewer,
       label: "fake",

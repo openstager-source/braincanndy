@@ -60,6 +60,8 @@ interface Ctx {
   priceForOne: number;
 }
 
+const PLURAL_DISHES = new Set(["andhra meals", "momos", "sweets", "noodles", "kebabs"]);
+
 function fill(r: Rng, tpl: string, ctx: Ctx): string {
   const base = pick(r, ctx.dishes);
   const dish = VARIANTS[base] ? pick(r, VARIANTS[base]!) : base;
@@ -72,7 +74,9 @@ function fill(r: Rng, tpl: string, ctx: Ctx): string {
   const [padj, padj2] = two("padj");
   const [flaw, flaw2] = two("flaw");
   const p = Math.round((ctx.priceForOne * (0.8 + r() * 0.5)) / 10) * 10;
-  return tpl
+  // "Andhra meals were", not "was". Only stopwords change, so scoring is unaffected.
+  const t = PLURAL_DISHES.has(dish) ? tpl.replace(/(\{[dD]ish\}) was\b/g, "$1 were").replace(/(\{[dD]ish\}) is\b/g, "$1 are") : tpl;
+  return t
     .replaceAll("{Dish}", dish[0]!.toUpperCase() + dish.slice(1))
     .replaceAll("{dish}", dish)
     .replaceAll("{name}", ctx.name)
