@@ -14,8 +14,45 @@ const FIRST_BYTE_MS = 15_000;
 const TOTAL_MS = 45_000;
 
 export class GeminiNotConfigured extends Error {}
-export class GeminiKeyRejected extends Error {}
-export class GeminiUnavailable extends Error {}
+
+/** key_rejected: bad, revoked or restricted key. quota: the key's rate or daily limit is used up. */
+export type GeminiFailure = "key_rejected" | "quota" | "unavailable";
+
+export class GeminiError extends Error {
+  constructor(
+    readonly kind: GeminiFailure,
+    /** Google's reason code (e.g. API_KEY_INVALID). Safe to show: never contains the key. */
+    readonly detail: string,
+  ) {
+    super(`${kind}: ${detail}`);
+  }
+}
+
+/** The key from the environment, forgiving spaces or quotes pasted into the Netlify UI along with it. */
+export function readGeminiKey(): string | undefined {
+  const key = process.env.GEMINI_API_KEY?.trim().replace(/^["'`]+|["'`]+$/g, "").trim();
+  return key || undefined;
+}
+
+interface GoogleError {
+  error?: { status?: string; message?: string; details?: { reason?: string }[] };
+}
+
+/** Sorts a failed Gemini response into something the visitor (and the site owner) can act on. */
+function classify(httpStatus: number, body: string): { kind: GeminiFailure; detail: string; tryNextModel: boolean } {
+  let err: GoogleError["error"];
+  try {
+    err = (JSON.parse(body) as GoogleError).error;
+  } catch {
+    err = undefined;
+  }
+  const detail = err?.details?.find((d) => d.reason)?.reason ?? err?.status ?? `HTTP ${httpStatus}`;
+  const keyProblem = httpStatus === 401 || httpStatus === 403 || detail === "API_KEY_INVALID" || /api key (not valid|expired)/i.test(err?.message ?? "");
+  if (keyProblem) return { kind: "key_rejected", detail, tryNextModel: false };
+  // Quotas are per model on the free tier, so another model may still have room.
+  if (httpStatus === 429) return { kind: "quota", detail, tryNextModel: true };
+  return { kind: "unavailable", detail, tryNextModel: true };
+}
 
 interface Part {
   text?: string;
@@ -34,7 +71,7 @@ export function geminiModels(): string[] {
 
 /** Streams Gemini text as plain UTF-8 chunks. Falls back to the next model on overload, slowness or a retired model. */
 export async function streamGemini(opts: { system: string; user: string; signal?: AbortSignal }): Promise<{ model: string; stream: ReadableStream<Uint8Array> }> {
-  const key = process.env.GEMINI_API_KEY;
+  const key = readGeminiKey();
   if (!key) throw new GeminiNotConfigured("GEMINI_API_KEY is not set");
 
   const deadline = AbortSignal.timeout(TOTAL_MS);
@@ -45,6 +82,8 @@ export async function streamGemini(opts: { system: string; user: string; signal?
     generationConfig: { maxOutputTokens: 1024, thinkingConfig: { thinkingLevel: "low" } },
   });
 
+  let hitQuota = false;
+  let lastDetail = "no response";
   for (const model of geminiModels()) {
     if (overall.aborted) break;
     // Per-attempt controller: the first-byte timer must not keep running once the answer is streaming.
@@ -64,6 +103,7 @@ export async function streamGemini(opts: { system: string; user: string; signal?
     } catch (e) {
       overall.removeEventListener("abort", onAbort);
       console.warn(`gemini ${model}: no response (${(e as Error).message}), trying next model`);
+      lastDetail = "timeout or network error";
       continue;
     } finally {
       clearTimeout(timer);
@@ -72,11 +112,46 @@ export async function streamGemini(opts: { system: string; user: string; signal?
     if (res.ok && res.body) return { model, stream: toTextStream(res.body, ctrl.signal) };
 
     overall.removeEventListener("abort", onAbort);
-    // Log upstream details server-side only; they never reach the client.
-    console.warn(`gemini ${model}: HTTP ${res.status} ${(await res.text().catch(() => "")).slice(0, 300)}`);
-    if (res.status === 401 || res.status === 403) throw new GeminiKeyRejected(`HTTP ${res.status}`);
+    const text = await res.text().catch(() => "");
+    // Full upstream details go to the function log only.
+    console.warn(`gemini ${model}: HTTP ${res.status} ${text.slice(0, 300)}`);
+    const c = classify(res.status, text);
+    if (!c.tryNextModel) throw new GeminiError(c.kind, c.detail);
+    hitQuota ||= c.kind === "quota";
+    lastDetail = c.detail;
   }
-  throw new GeminiUnavailable("all models failed or timed out");
+  throw hitQuota ? new GeminiError("quota", "RESOURCE_EXHAUSTED") : new GeminiError("unavailable", lastDetail);
+}
+
+export type PingResult = { ok: true; model: string; ms: number } | { ok: false; kind: GeminiFailure | "not_configured"; detail: string };
+
+/** A tiny real request through the same model chain, for the setup check. */
+export async function pingGemini(): Promise<PingResult> {
+  const key = readGeminiKey();
+  if (!key) return { ok: false, kind: "not_configured", detail: "GEMINI_API_KEY is not set" };
+  let hitQuota = false;
+  let lastDetail = "no response";
+  for (const model of geminiModels()) {
+    const started = Date.now();
+    try {
+      const res = await fetch(`${BASE}/${encodeURIComponent(model)}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": key },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "Reply with the word OK." }] }], generationConfig: { maxOutputTokens: 16 } }),
+        signal: AbortSignal.timeout(FIRST_BYTE_MS),
+      });
+      if (res.ok) return { ok: true, model, ms: Date.now() - started };
+      const text = await res.text().catch(() => "");
+      console.warn(`gemini check ${model}: HTTP ${res.status} ${text.slice(0, 300)}`);
+      const c = classify(res.status, text);
+      if (!c.tryNextModel) return { ok: false, kind: c.kind, detail: c.detail };
+      hitQuota ||= c.kind === "quota";
+      lastDetail = c.detail;
+    } catch {
+      lastDetail = "timeout or network error";
+    }
+  }
+  return hitQuota ? { ok: false, kind: "quota", detail: "RESOURCE_EXHAUSTED" } : { ok: false, kind: "unavailable", detail: lastDetail };
 }
 
 const enc = new TextEncoder();

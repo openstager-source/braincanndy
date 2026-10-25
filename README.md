@@ -49,13 +49,17 @@ Live AI results vary run to run. With 20 fakes and the injection review, live na
 
 ### If something's wrong
 
+**Live AI not working?** Open `https://YOUR-SITE.netlify.app/api/health?check=1`, or press **Check setup** under the live AI answers. It reports whether the function is deployed, whether the key is set, and what Gemini says about the key. Only status words are returned, never the key.
+
 | What you see | Fix |
 |---|---|
 | "Page not found" on the whole site | The site was uploaded without a build. Re-create it with "Import an existing project" (step 1). |
 | Deploy log says the build failed | Copy the last 30 lines of the deploy log; the cause is usually there. |
-| "Live AI isn't set up on this site yet" | Add `GEMINI_API_KEY`, then redeploy. |
-| "Gemini rejected the API key" | The key is wrong or deleted. Create a new one in Google AI Studio. |
-| "Gemini is busy or slow right now" | All fallback models failed; try again. Check the function log: Netlify → Logs → Functions → `answer`. |
+| `/api/health` is "Page not found" | Functions weren't built: same fix as the first row. |
+| `"geminiKey":"missing"` / "Live AI isn't set up" | Add a variable named exactly `GEMINI_API_KEY`, then **Trigger deploy**. Env var changes only apply after a new deploy. |
+| `"kind":"key_rejected"` | Google refused the key; `detail` says why (e.g. `API_KEY_INVALID`). Copy the key again from Google AI Studio. Stray quotes and spaces are stripped automatically. |
+| `"kind":"quota"` | The key's free quota is used up. Per-minute limits reset in a minute, daily ones at midnight Pacific. Billing in Google AI Studio lifts them. |
+| `"kind":"unavailable"` | Gemini didn't answer; try again. Details: Netlify → Logs → Functions → `answer`. |
 
 ## Run locally
 

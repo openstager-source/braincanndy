@@ -270,6 +270,12 @@ input[type="range"] { width: 100%; accent-color: var(--saffron); }
 .reviews .text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .reasons { margin: 6px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
 .answer { white-space: pre-wrap; overflow-wrap: anywhere; min-height: 80px; font-size: 15px; }
+.setup { display: grid; gap: 10px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 13px; }
+.checks li { position: relative; padding-left: 22px; }
+.checks li::before { content: "•"; position: absolute; left: 6px; color: var(--muted); }
+.checks li.ok::before { content: "✓"; left: 3px; color: var(--mint); font-weight: 800; }
+.checks li.bad::before { content: "✗"; left: 3px; color: var(--chili); font-weight: 800; }
 .chart svg { width: 100%; height: auto; display: block; }
 .chart-wait { aspect-ratio: 520 / 220; border-radius: 12px; background: var(--surface-2); }
 .legend { display: flex; gap: 16px; font-size: 13px; color: var(--muted); margin-top: 6px; flex-wrap: wrap; }

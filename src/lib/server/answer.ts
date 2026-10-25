@@ -3,7 +3,7 @@ import { z } from "zod";
 import { AttackSchema } from "../sandbox/attack-schema";
 import { generateSandbox } from "../sandbox/generate";
 import { runQuery } from "../scoring/engine";
-import { GeminiKeyRejected, GeminiNotConfigured, streamGemini } from "./gemini";
+import { GeminiError, GeminiNotConfigured, streamGemini } from "./gemini";
 import { hasValidPass, passCookie, rateLimit, sameOrigin, verifyTurnstile } from "./guard";
 import { foolproofPrompt, naivePrompt } from "./prompts";
 
@@ -15,7 +15,7 @@ const Body = z.object({
 });
 
 /** Machine-readable reasons, so the page can tell the visitor what to do. */
-export type AnswerError = "forbidden" | "too_large" | "rate_limited" | "bad_request" | "bot_check" | "no_match" | "not_configured" | "key_rejected" | "ai_busy";
+export type AnswerError = "forbidden" | "too_large" | "rate_limited" | "bad_request" | "bot_check" | "no_match" | "not_configured" | "key_rejected" | "quota" | "ai_busy";
 
 const sandbox = generateSandbox();
 const json = (status: number, error: AnswerError, headers?: HeadersInit) =>
@@ -63,7 +63,8 @@ export async function handleAnswer(req: Request, ip: string): Promise<Response> 
     });
   } catch (e) {
     if (e instanceof GeminiNotConfigured) return json(503, "not_configured");
-    if (e instanceof GeminiKeyRejected) return json(502, "key_rejected");
+    if (e instanceof GeminiError && e.kind === "key_rejected") return json(502, "key_rejected");
+    if (e instanceof GeminiError && e.kind === "quota") return json(503, "quota", { "Retry-After": "60" });
     return json(503, "ai_busy", { "Retry-After": "10" });
   }
 }
